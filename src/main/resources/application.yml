@@ -1,0 +1,18 @@
+appinfo:
+  title: Login
+  description: Sample of login application
+  apiVersion: 1.0.0
+  termsOfServiceUrl: example
+  contact:
+    name: Sample
+    url: Sample
+    email: Sample
+  license: Sample
+  licenseUrl: Sample
+
+logging:
+  level:
+    org.springframework.security: info
+    org.springframework.cache: trace
+    com.auth: debug
+    
