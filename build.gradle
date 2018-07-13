@@ -103,7 +103,7 @@ task buildDocker(type: Docker, dependsOn: build) {
     tag = 'test/auth'
     if (Os.isFamily(Os.FAMILY_UNIX))
         dockerBinary = 'sudo docker'
-    dockerfile = file('src/main/docker/dockerfile')
+    dockerfile = file('src/main/docker/Dockerfile')
     doFirst {
         copy {
             from jar
