@@ -12,7 +12,5 @@ appinfo:
 
 logging:
   level:
-    org.springframework.security: info
-    org.springframework.cache: trace
     com.auth: debug
     

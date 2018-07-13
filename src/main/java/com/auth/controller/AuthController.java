@@ -29,7 +29,7 @@ public class AuthController {
     private AuthService authService;
 
     @RequestMapping(
-        value = "/users/",
+        value = "/login",
         method = RequestMethod.POST,
         produces = MediaType.APPLICATION_JSON_UTF8_VALUE
     )
@@ -46,11 +46,9 @@ public class AuthController {
     })
     public ResponseEntity<?> login(
         HttpServletRequest request,
-        @ApiParam(value = "User name", required = true) @RequestParam("userName") String userName, 
-        @ApiParam(value = "Password", required = true) @RequestParam("password") String password) { 
-           	
-        final User user = authService.findUser(); 
+        @ApiParam(value = "User name", required = true) @RequestParam("userName") String userName,
+        @ApiParam(value = "Password", required = true) @RequestParam("password") String userPassword) {
+        final User user = authService.login(userName, userPassword);
         return new ResponseEntity<>(user, HttpStatus.OK);
     }
-    
 }

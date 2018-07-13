@@ -79,36 +79,15 @@ sourceSets {
     }
 }
 
-jacocoTestCoverageVerification {
-    violationRules {
-        rule {
-            limit {
-                minimum = 0.8
-            }
-            enabled = true
-            element = 'CLASS'
-            excludes = [
-                'com.auth.AuthApplication',
-                'com.auth.config.*',
-                'com.auth.domain.*',
-                'com.auth.entity.*',
-            ]
-        }
+jacocoTestReport {
+    reports {
+        xml.enabled true
+        html.enabled true
+        csv.enabled true
     }
 }
 
-jacocoTestReport {
-    afterEvaluate {
-        classDirectories = files(classDirectories.files.collect {
-            fileTree(dir: it, exclude: [
-                'com/auth/AuthApplication**',
-                'com/auth/config/**',
-                'com/auth/domain/**',
-                'com/auth/entity/**'
-            ])
-        })
-    }
-}
+
 
 task wrapper(type: Wrapper) {
     group = 'build'
@@ -121,7 +100,7 @@ task buildDocker(type: Docker, dependsOn: build) {
     group = 'build'
     description = 'Build a Docker container'
     push = project.hasProperty('push')
-    tag = 'auth'
+    tag = 'test/auth'
     if (Os.isFamily(Os.FAMILY_UNIX))
         dockerBinary = 'sudo docker'
     dockerfile = file('src/main/docker/Dockerfile')
