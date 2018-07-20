@@ -35,9 +35,8 @@ dependencyManagement {
 
 version = '1.0.0'
 
-jar {
-    baseName = 'restfulWithMongoDB'
- }
+//jar.baseName = 'auth' 
+archivesBaseName = 'auth'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
