@@ -13,9 +13,12 @@ buildscript {
         classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
         classpath "io.spring.gradle:dependency-management-plugin:1.0.2.RELEASE"
     }
+    ext['flyway.version'] = '4.2.0'
+ 
 }
 
 plugins {
+    id 'org.flywaydb.flyway' version '4.2.0'
     id 'com.palantir.jacoco-full-report' version '0.4.0'
 }
 
@@ -60,8 +63,15 @@ dependencies {
     compile('org.springframework.security:spring-security-core')
     compile('org.springframework.security:spring-security-crypto')
     compile('org.springframework.boot:spring-boot-starter-web')
-    compile('org.springframework.boot:spring-boot-starter-data-mongodb')
+    compile('org.springframework.boot:spring-boot-starter-data-jpa')
     compile 'org.springframework.restdocs:spring-restdocs-mockmvc:2.0.0.RELEASE'
+    compile('org.flywaydb:flyway-core')
+    compile('org.modelmapper:modelmapper:0.7.7')
+    compile('commons-codec:commons-codec')
+    compile('commons-validator:commons-validator:1.6')
+    
+    
+    runtime('org.postgresql:postgresql')
 
     testCompile('org.springframework.boot:spring-boot-starter-test')
 }

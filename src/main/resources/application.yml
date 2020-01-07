@@ -1,16 +1,65 @@
 appinfo:
-  title: Login
-  description: Sample of login application
+  title: Authorization REST API
+  description: Demo auth application
   apiVersion: 1.0.0
-  termsOfServiceUrl: example
+  termsOfServiceUrl: https://www.justfordemo
   contact:
-    name: Sample
-    url: Sample
-    email: Sample
-  license: Sample
-  licenseUrl: Sample
+    name: TBD
+    url: TBD
+    email: TBD
+  license: TBD
+  licenseUrl: TBD
+ 
+spring:
+  datasource:
+    platform: postgres
+    type: org.apache.tomcat.jdbc.pool.DataSource
+    url: jdbc:postgresql://localhost:5433/auth
+    username: postgres
+    password: password
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+  jpa:
+      properties:
+        hibernate:
+          max_fetch_depth: 5
+          show_sql: false
+          format_sql: false
+          jdbc:
+            fetch_size: 50
+            batch_size: 50
 
+passwordRequirements:
+  newUserExpirationHours: 72
+  resetPasswordExpirationHours: 24
+  passwordExpirationDays: 180
+  passwordHistoryReuse: 2
+  accountLockedAttempts: 3
+  minPasswordLength: 10
+  maxPasswordLength: 50
+  allowEmailMatch: false
+  allowRepeatedChars: false
+  requiredCharSets:
+    numRulesToMatch: 3
+    upperCaseRequired: true
+    lowerCaseRequired: true
+    digitRequired: true
+    specialCharacterRequired: true
+ 
+responseCode:
+  passwordExpired: 1001
+  accountLocked: 1002
+  accountJustBecameLocked: 1003
+
+application:
+  supportedLocales: af, agq, cs, da, de, dua, el, en, es, fi, fr, hi, hu, it, ja, ko, lv, nl, pl, pt, sk, sv, ru, zh
+     
 logging:
   level:
-    com.auth: debug
-    
+    org.springframework.security: info
+    org.springframework.cache: trace
+    org.hibernate.type.descriptor.sql.BasicBinder: trace
+    net.sf.ehcache: trace
+    com.mednet: debug
+    org.hibernate: trace
