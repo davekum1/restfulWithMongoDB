@@ -14,9 +14,9 @@ spring:
   datasource:
     platform: postgres
     type: org.apache.tomcat.jdbc.pool.DataSource
-    url: jdbc:postgresql://localhost:5433/auth
-    username: postgres
-    password: password
+    url: jdbc:postgresql://localhost:5432/auth
+    username: admin
+    password: admin
   jackson:
     serialization:
       write-dates-as-timestamps: false
