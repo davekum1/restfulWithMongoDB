@@ -2,14 +2,22 @@ package com.auth.service;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import com.auth.config.ErrorMessageWrapper;
+import com.auth.config.PasswordChecker;
 import com.auth.domain.UserRequestData;
 import com.auth.domain.UserResponseData;
+import com.auth.entity.PasswordHistory;
 import com.auth.entity.User;
 import com.auth.exception.EmailAlreadyInUseException;
 import com.auth.exception.LoginAlreadyInUseException;
@@ -20,7 +28,10 @@ import com.auth.utils.PasswordUtil;
 public class AuthService {
 	@Autowired
 	private UserRepository userRepository;
-    
+
+	@Autowired
+	private PasswordHistoryService passwordHistoryService;
+	
 	/**
 	 * Find user by loginId
 	 * @param login
@@ -155,5 +166,50 @@ public class AuthService {
         modelMapper.map(user, userResponseData); 
         return userResponseData;
     }
-   
+  
+    public void updateUserWithNewPassword(
+            User user, PasswordChecker passwordChecker, String newPassword,
+            String confirmedPassword,
+            ErrorMessageWrapper errorMessage) {
+
+        try {
+            boolean isPasswordValid = passwordChecker.isPasswordValid(newPassword, confirmedPassword, user.getEmail(), errorMessage);
+            /*
+             * If the application configuration for 'passwordRequirements.passwordHistoryReuse' is 0 ensure that
+             * the elements per page ('pageSize') is at least 1.
+             */
+            int pageSize = passwordChecker.getPasswordHistoryReuse() > 0 ? passwordChecker.getPasswordHistoryReuse() : 1;
+            PageRequest pageRequest = new PageRequest(0, pageSize, Sort.Direction.DESC, "dateAdded");
+            Page<PasswordHistory> pageOne = this.passwordHistoryService.findAllByUuid(pageRequest, user.getUuid());
+            List<PasswordHistory> passwordHistories = pageOne.getContent();
+            // Ensure the new password is not in the password history for this User
+            boolean isPasswordHistoryValid = passwordChecker.isPasswordHistoryValid(user, newPassword, passwordHistories, errorMessage);
+
+            if (isPasswordValid && isPasswordHistoryValid) {
+                // If all is good, reset the necessary fields on the User.
+                user.setFailedLoginAttempts(0);
+                user.setPasswordResetHash(null);
+                user.setPasswordResetHashExpires(null);
+                user.setLocked(false);
+
+                // Update the User with the new password
+                user.setPasswordHash(PasswordUtil.PASSWORD_ENCODER.encode(newPassword));
+
+                // Update the User's password expiration.
+                int passwordExpirationDays = passwordChecker.getPasswordExpirationDays();
+                LocalDateTime passwordExpiration = LocalDateTime.now().plusDays(passwordExpirationDays);
+                user.setPasswordExpirationDate(passwordExpiration);
+
+                /*
+                 * If all is successful, save the updated information to the User table,
+                 * create a new PasswordHistory entry for the user, and delete their
+                 * unused PasswordHistory entries.
+                 */
+                this.passwordHistoryService.createNewPasswordHistory(user);
+                this.passwordHistoryService.deleteUserPasswordHistory(user, passwordChecker.getPasswordHistoryReuse());
+            }
+        } finally {
+            this.userRepository.saveAndFlush(user);
+        }
+    }    
 }

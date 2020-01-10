@@ -12,6 +12,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -25,6 +27,7 @@ import com.auth.config.RequestParameter;
 import com.auth.config.ResponseCode;
 import com.auth.config.ResponseCodeConfiguration;
 import com.auth.config.ResponseMessage;
+import com.auth.domain.UserRequestData;
 import com.auth.domain.UserResponseData;
 import com.auth.entity.User;
 import com.auth.service.AuthService;
@@ -64,11 +67,6 @@ public class AuthController {
         @ApiOperation(value = "authenticate", notes  = "Authenticate to service")
         @ApiImplicitParams({
             @ApiImplicitParam(
-                required = true,
-                dataType = "string",
-                paramType = "header"
-            ),
-            @ApiImplicitParam(
                 name = RequestParamConstant.ACCEPT_LANGUAGE,
                 value = RequestParamConstant.ACCEPT_LANGUAGE_DESC,
                 required = false,
@@ -85,6 +83,9 @@ public class AuthController {
                 @RequestParam(RequestParamConstant.PASSWORD) String password) {
             ErrorMessageWrapper errorMessage = new ErrorMessageWrapper("password");
             User user = authService.findUserByLogin(login);
+            if (user == null) {
+            		return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            }
             PasswordUtil passwordUtil = new PasswordUtil(user);
 
             // check if account is locked, if yes, then exit
@@ -116,6 +117,65 @@ public class AuthController {
 
         }
 
+    @RequestMapping(
+            value = "/{login:.+}",
+            method = RequestMethod.GET,
+            produces = MediaType.APPLICATION_JSON_UTF8_VALUE
+        )
+        @ApiOperation(value = "findUserByLogin", notes = "Retrive user detail information")
+        @ApiImplicitParams({
+            @ApiImplicitParam(
+                name = RequestParamConstant.ACCEPT_LANGUAGE,
+                value = RequestParamConstant.ACCEPT_LANGUAGE_DESC,
+                required = false,
+                dataType = "string",
+                paramType = "header",
+                defaultValue = "en"
+            )
+        })
+        public ResponseEntity<?> findUserByLogin(
+                HttpServletRequest request,
+                @ApiParam(value = RequestParamConstant.LOGIN_DESC, required = true)
+                @PathVariable(RequestParamConstant.LOGIN) String login) {
+            User user = authService.findUserByLogin(login);
+            if (user == null) {            	
+            	 return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            }
+            UserResponseData userResponseData = authService.mapToUserResponseData(user);
+            return new ResponseEntity<>(userResponseData, HttpStatus.OK);
+    }
+ 
+    
+    @RequestMapping(
+            value = "/",
+            method = RequestMethod.POST
+        )
+        @ApiOperation(value = "createUser", notes = "Create new user in Mednet user table.")
+        @ApiImplicitParams({
+            @ApiImplicitParam(
+                name = RequestParamConstant.ACCEPT_LANGUAGE,
+                value = RequestParamConstant.ACCEPT_LANGUAGE_DESC,
+                required = false,
+                dataType = "string",
+                paramType = "header",
+                defaultValue = "en"
+            )
+        })
+        public ResponseEntity<?> createUserEndPoint(
+                HttpServletRequest request,
+                @ApiParam(value = RequestParamConstant.USER_REQUEST_DATA_DESC, required = true)
+                @Validated @RequestBody UserRequestData userRequestData) {
+
+            // If here there were no validation errors: save the user and send the response.
+            User user = this.authService.createUser(userRequestData); // Login cannot be null or empty
+            // generate new hash since password is expired
+            this.authService.generatePasswordResetHash(user, this.newUserExpirationHours);
+            UserResponseData userResponseData = this.authService.mapToUserResponseData(user);
+            return new ResponseEntity<>(userResponseData, HttpStatus.CREATED);
+        }
+   
+ 
+    
     private ResponseEntity<ResponseMessage> buildLoginAttemptResponse(User user, HttpServletRequest request) {
         if (this.passwordChecker.getAccountLockedAttempts() == 0) {
             // The failed login attempts is turned off
@@ -144,6 +204,48 @@ public class AuthController {
         return responseEntity;
     }    
     
+    @RequestMapping(
+            value = "/{login:.+}/changePasswordWithToken",
+            method = RequestMethod.POST
+        )
+        @ApiOperation(value = "changePasswordWithToken", notes = "Resetting password via token.")
+        @ApiImplicitParams({
+            @ApiImplicitParam(
+                name = RequestParamConstant.ACCEPT_LANGUAGE,
+                value = RequestParamConstant.ACCEPT_LANGUAGE_DESC,
+                required = false,
+                dataType = "string",
+                paramType = "header",
+                defaultValue = "en"
+            )
+        })
+        public ResponseEntity<ResponseMessage> changePasswordWithToken(
+                HttpServletRequest request,
+                @ApiParam(value = RequestParamConstant.LOGIN_DESC, required = true)
+                @PathVariable String login,
+                // This will be used to authenticate the user before changing their password
+                @ApiParam(value = RequestParamConstant.PASSWORD_RESET_HASH_DESC, required = true)
+                @RequestParam(RequestParamConstant.PASSWORD_RESET_HASH) String passwordResetHash,
+                // The new password to change to
+                @ApiParam(value = RequestParamConstant.NEW_PASSWORD_DESC, required = true)
+                @RequestParam(RequestParamConstant.NEW_PASSWORD) String newPassword,
+                // The user must confirm the password to change it
+                @ApiParam(value = RequestParamConstant.CONFIRMED_PASSWORD_DESC, required = true)
+                @RequestParam(RequestParamConstant.CONFIRMED_PASSWORD) String confirmedPassword) {
+            ErrorMessageWrapper errorMessage = new ErrorMessageWrapper("password");
+            User user = this.authService.findUserByLogin(login);
+
+
+            PasswordUtil authenticator = new PasswordUtil(user);
+            if (authenticator.isPasswordResetHashValid(passwordResetHash)) {
+                this.authService.updateUserWithNewPassword(user, this.passwordChecker, newPassword, confirmedPassword, errorMessage);
+                // If the password reset hash is valid, always return the OK response with the error messages
+                return this.buildResponse(HttpStatus.OK, errorMessage.getErrorMessages(), request);
+            }
+
+            return this.buildResponse(HttpStatus.UNAUTHORIZED, errorMessage.getErrorMessages(), request);
+        }
+   
     
     // Building ResponseEntity
     // -----------------------

@@ -1,4 +1,4 @@
-CREATE TABLE user (
+CREATE TABLE user_profile (
     uuid UUID PRIMARY KEY NOT NULL,
     login TEXT NOT NULL UNIQUE,
     email TEXT UNIQUE,
@@ -19,5 +19,5 @@ CREATE TABLE password_history (
   uuid UUID NOT NULL,
   date_added TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
   password_hash TEXT NOT NULL,
-  CONSTRAINT fk_uuid FOREIGN KEY (uuid) REFERENCES user (uuid) ON DELETE CASCADE
+  CONSTRAINT fk_uuid FOREIGN KEY (uuid) REFERENCES user_profile (uuid) ON DELETE CASCADE
 );

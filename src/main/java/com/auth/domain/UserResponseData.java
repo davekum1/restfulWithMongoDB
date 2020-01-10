@@ -6,9 +6,18 @@ import java.util.UUID;
 import javax.persistence.Convert;
 
 import com.auth.config.LocalDateTimeConverter;
+import com.auth.domain.UserRequestData.UserRequestDataBuilder;
 
 import io.swagger.annotations.ApiModelProperty;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class UserResponseData {
 	    private UUID uuid;
 	    private Long profileId;

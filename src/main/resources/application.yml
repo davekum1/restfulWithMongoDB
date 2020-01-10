@@ -13,14 +13,15 @@ appinfo:
 spring:
   datasource:
     platform: postgres
-    type: org.apache.tomcat.jdbc.pool.DataSource
-    url: jdbc:postgresql://localhost:5432/auth
-    username: admin
-    password: admin
+    url: jdbc:postgresql://localhost:5433/auth
+    username: postgres
+    password: password
+    driver-class-name: org.postgresql.Driver
   jackson:
     serialization:
       write-dates-as-timestamps: false
   jpa:
+      database: postgresql
       properties:
         hibernate:
           max_fetch_depth: 5
@@ -58,8 +59,9 @@ application:
 logging:
   level:
     org.springframework.security: info
-    org.springframework.cache: trace
-    org.hibernate.type.descriptor.sql.BasicBinder: trace
-    net.sf.ehcache: trace
-    com.mednet: debug
-    org.hibernate: trace
+    org.springframework.cache: info
+    org.hibernate.type.descriptor.sql.BasicBinder: info
+    net.sf.ehcache: info
+    org.hibernate: info
+    
+    
